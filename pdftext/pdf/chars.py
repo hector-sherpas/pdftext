@@ -1,4 +1,5 @@
 import math
+from collections import defaultdict
 from typing import Dict, List
 
 import pypdfium2.raw as pdfium_c
@@ -41,7 +42,6 @@ def get_pdfium_chars(pdf, page_range, flatten_pdf, fontname_sample_freq=settings
             page = pdf.get_page(page_idx)
         
         text_page = page.get_textpage()
-        mediabox = page.get_mediabox()
         page_rotation = page.get_rotation()
         bbox = page.get_bbox()
         page_width = math.ceil(abs(bbox[2] - bbox[0]))
@@ -56,8 +56,6 @@ def get_pdfium_chars(pdf, page_range, flatten_pdf, fontname_sample_freq=settings
         if page_rotation == 90 or page_rotation == 270:
             page_width, page_height = page_height, page_width
 
-        bl_origin = (mediabox[0] == 0 and mediabox[1] == 0)
-
         text_chars = {
             "page": page_idx,
             "rotation": page_rotation,
@@ -66,10 +64,15 @@ def get_pdfium_chars(pdf, page_range, flatten_pdf, fontname_sample_freq=settings
             "height": page_height,
         }
 
+        # For pypdfium bbox function later
+        page_width = math.ceil(page_width)
+        page_height = math.ceil(page_height)
+
         fontname = None
         fontflags = None
         total_chars = text_page.count_chars()
         char_infos = []
+        rad_to_deg = 180 / math.pi
 
         for i in range(total_chars):
             char = pdfium_c.FPDFText_GetUnicode(text_page, i)
@@ -84,9 +87,9 @@ def get_pdfium_chars(pdf, page_range, flatten_pdf, fontname_sample_freq=settings
                     update_previous_fonts(char_infos, i, prev_fontname, prev_fontflags, text_page, fontname_sample_freq)
 
             rotation = pdfium_c.FPDFText_GetCharAngle(text_page, i)
-            rotation = rotation * 180 / math.pi # convert from radians to degrees
+            rotation = rotation * rad_to_deg # convert from radians to degrees
             coords = text_page.get_charbox(i, loose=rotation == 0) # Loose doesn't work properly when charbox is rotated
-            device_coords = page_bbox_to_device_bbox(page, coords, page_width, page_height, bl_origin, page_rotation, normalize=True)
+            device_coords = page_bbox_to_device_bbox(page, coords, page_width, page_height, page_rotation, normalize=True)
 
             char_info = {
                 "font": {

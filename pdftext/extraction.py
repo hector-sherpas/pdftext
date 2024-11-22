@@ -1,3 +1,6 @@
+import atexit
+from functools import partial
+from itertools import repeat
 from typing import List
 from concurrent.futures import ProcessPoolExecutor
 import math
@@ -28,12 +31,18 @@ def _get_page_range(page_range, flatten_pdf=False):
     return pages
 
 
+def worker_shutdown(pdf_doc):
+    pdf_doc.close()
+
+
 def worker_init(pdf_path, flatten_pdf):
     global model
     global pdf_doc
 
     pdf_doc = _load_pdf(pdf_path, flatten_pdf)
     model = get_model()
+
+    atexit.register(partial(worker_shutdown, pdf_doc))
 
 
 def _get_pages(pdf, page_range=None, flatten_pdf=False, workers=None):
@@ -47,18 +56,24 @@ def _get_pages(pdf, page_range=None, flatten_pdf=False, workers=None):
     if workers is None or workers <= 1:
         model = get_model()
         text_chars = get_pdfium_chars(pdf_doc, page_range, flatten_pdf)
+        pdf_doc.close()
         return inference(text_chars, model)
 
+    pdf_doc.close()
     page_range = list(page_range)
 
     pages_per_worker = math.ceil(len(page_range) / workers)
     page_range_chunks = [page_range[i * pages_per_worker:(i + 1) * pages_per_worker] for i in range(workers)]
 
+<<<<<<< HEAD
     with ProcessPoolExecutor(max_workers=workers, initializer=worker_init, initargs=(pdf, flatten_pdf)) as executor:
         pages = list(executor.map(_get_page_range, page_range_chunks))
+=======
+    with ProcessPoolExecutor(max_workers=workers, initializer=worker_init, initargs=(pdf_path, flatten_pdf)) as executor:
+        pages = list(executor.map(_get_page_range, page_range_chunks, repeat(flatten_pdf)))
+>>>>>>> upstream/master
 
     ordered_pages = [page for sublist in pages for page in sublist]
-
     return ordered_pages
 
 
