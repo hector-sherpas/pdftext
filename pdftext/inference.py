@@ -67,8 +67,6 @@ def create_training_row(char_info, prev_char, currblock, currline):
         char_y2 - prev_y1
     ], dtype=np.float32)
 
-    return training_row
-
 
 def update_span(line, span):
     if span["chars"]:

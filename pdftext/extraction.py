@@ -1,3 +1,4 @@
+from itertools import repeat
 from typing import List
 from concurrent.futures import ProcessPoolExecutor
 import math
@@ -55,7 +56,7 @@ def _get_pages(pdf, page_range=None, flatten_pdf=False, workers=None):
     page_range_chunks = [page_range[i * pages_per_worker:(i + 1) * pages_per_worker] for i in range(workers)]
 
     with ProcessPoolExecutor(max_workers=workers, initializer=worker_init, initargs=(pdf, flatten_pdf)) as executor:
-        pages = list(executor.map(_get_page_range, page_range_chunks))
+        pages = list(executor.map(_get_page_range, page_range_chunks, repeat(flatten_pdf)))
 
     ordered_pages = [page for sublist in pages for page in sublist]
 
