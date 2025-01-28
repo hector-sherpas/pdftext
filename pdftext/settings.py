@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    BASE_PATH: str = os.path.dirname(os.path.dirname(__file__))
+    BASE_PATH: str = os.path.dirname(__file__)
     MODEL_PATH: str = os.path.join(BASE_PATH, "models", "dt.onnx")
 
     # Fonts
