@@ -12,8 +12,6 @@ packages = [
 ]
 include = [
     "extract_text.py",
-    "models/dt.joblib",
-    "models/dt.onnx"
 ]
 
 [tool.poetry.dependencies]
